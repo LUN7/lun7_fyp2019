@@ -26,10 +26,13 @@ dev_temp = tempeature
 dev_hum = humidity
 plt.plot(dev_x, dev_temp, label='tempeature')
 plt.plot(dev_x, dev_hum, label='humidity')
+#plt.plot_date(dev_x, dev_temp, tz=None, xdate=True, ydate=False)
 plt.xlabel('date')
 plt.ylabel('')
 
 plt.show()
+
+plt.savefig('fig')
 # print(date)
 # fig = plt.figure()  # an empty figure with no axes
 # fig.suptitle('DateTime')  # Add a title so we know which it is
