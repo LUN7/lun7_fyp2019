@@ -10,13 +10,7 @@
 `Problem`
 - model can only be examinated by exiting data
 
-`Solution`
-#### More ambigous goal
-- design a mini real model
-- a cooling device 
-- tempeature sensor
-- humidity sensor
-- controling unit (raspberry pi)
-- log data 
-- learn the model charateristic 
-- optimise the control algorithum with built model 
+'Solution'
+- see updated_plan.docs
+## 10-14-2019
+- Bought essentials
