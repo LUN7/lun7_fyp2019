@@ -21,3 +21,4 @@
 - essential recevied 
 - Cooling system diy
 - works well
+![setup](https://github.com/LUN7/lun7_fyp2019/blob/master/IMG_20191017_181935.jpg)
