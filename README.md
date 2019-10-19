@@ -16,3 +16,8 @@
 - see updated_plan.docs
 ## 10-14-2019
 - Bought essentials
+
+## 10-17-2019
+- essential recevied 
+- Cooling system diy
+- works well
