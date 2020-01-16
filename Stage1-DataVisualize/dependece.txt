@@ -1,4 +1,0 @@
-pip install seaborn
-pip install pandas
-python -m pip install -U matplotlib
-python -m pip install --user numpy scipy matplotlib ipython jupyter pandas sympy nose
