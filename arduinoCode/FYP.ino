@@ -143,17 +143,36 @@ void ReadAmp()
     Serial.println(Amps);
 }
 
-void PrintToLCD(String firstLine)
+void PrintToLCD(String s)
 {
 
     lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print(firstLine);
+    lcd.print(s);
     delay(1000);
 }
 
 void DisplayData()
 {
+    for (int foo = 0 ; foo < 4 ; i++) {
+        lcd.clear();
+        lcd.print("IAS");
+        //IAS = Indoor Air Sensor
+        lcd.print(i);
+        lcd.print(" ");
+        lcd.print(indoorAirData[i].tempeature);
+        lcd.print(" ");
+        lcd.print(indoorAirData[i].humidiy);    
+        delay(1500);
+    };
+    lcd.clear();
+    lcd.print("SAS");
+    //SAS = Supply Air Sensor
+    lcd.print(i);
+    lcd.print(" ");
+    lcd.print(indoorAirData[i].tempeature);
+    lcd.print(" ");
+    lcd.print(indoorAirData[i].humidiy);    
+    delay(1500);
 }
 
 void SaveData()
