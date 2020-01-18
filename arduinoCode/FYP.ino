@@ -48,11 +48,22 @@ const int chipSelect = 4;
 
 LiquidCrystal lcd(33, 31, 28, 26, 24, 22);
 
+byte degC[] = {
+    B01110,
+    B01010,
+    B01110,
+    B00000,
+    B00000,
+    B00000,
+    B00000,
+    B00000};
+//degree C symbol
+
 void setup()
 {
 
     Serial.begin(9600);
-
+    lcd.createChar(0, degC);
     lcd.begin(16, 2);
     PrintToLCD("Hello World");
     PrintToLCD("LUN FYP");
@@ -97,7 +108,6 @@ void loop()
     ReadTempAndHumidity();
     SerialPrintData();
     SaveData();
-    TECmode = RandMode();
     SetMode();
     DisplayData();
 }
@@ -145,7 +155,6 @@ void ReadAmp()
 
 void PrintToLCD(String s)
 {
-
     lcd.clear();
     lcd.print(s);
     delay(1000);
@@ -153,25 +162,71 @@ void PrintToLCD(String s)
 
 void DisplayData()
 {
-    for (int foo = 0 ; foo < 4 ; i++) {
-        lcd.clear();
+    lcd.clear();
+    lcd.setCursor(7, 0);
+    switch (TECmode)
+    {
+    case 0:
+        //2V
+        lcd.print("02V ");
+        break;
+    case 1:
+        //4V
+        lcd.print("04V ");
+        break;
+    case 2:
+        //6V
+        lcd.print("06V ");
+        break;
+    case 3:
+        //8V
+        lcd.print("08V ");
+        break;
+    case 4:
+        //10V
+        lcd.print("10V ");
+        break;
+    case 5:
+        //12V
+        lcd.print("12V ");
+        break;
+    case 6:
+        //OFF
+        lcd.print("OFF ");
+        break;
+    }
+    lcd.print(Amps / 1);
+    lcd.print("A");
+
+    for (int foo = 0; foo < 4; foo++)
+    {
+        lcd.setCursor(0, 0);
         lcd.print("IAS");
         //IAS = Indoor Air Sensor
-        lcd.print(i);
+        lcd.print(foo);
         lcd.print(" ");
-        lcd.print(indoorAirData[i].tempeature);
-        lcd.print(" ");
-        lcd.print(indoorAirData[i].humidiy);    
+        lcd.setCursor(0, 1);
+        lcd.print(indoorAirData[foo].tempeature);
+        lcd.write((byte)0);
+        lcd.print("C ");
+        lcd.print(indoorAirData[foo].humidity);
+        lcd.print("%");
         delay(1500);
+        lcd.setCursor(0, 0);
+        lcd.print("      ");
+        lcd.setCursor(0, 1);
+        lcd.print("                ");
     };
-    lcd.clear();
+    lcd.setCursor(0, 0);
     lcd.print("SAS");
-    //SAS = Supply Air Sensor
-    lcd.print(i);
-    lcd.print(" ");
-    lcd.print(indoorAirData[i].tempeature);
-    lcd.print(" ");
-    lcd.print(indoorAirData[i].humidiy);    
+    //SAS = Supply Air SensorsFeedBack
+    lcd.print("   ");
+    lcd.setCursor(0, 1);
+    lcd.print(supplyAirData.tempeature);
+    lcd.write((byte)0);
+    lcd.print("C ");
+    lcd.print(supplyAirData.humidity);
+    lcd.print("%");
     delay(1500);
 }
 
@@ -218,7 +273,7 @@ int RandMode()
 
 void SetMode()
 {
-
+    TECmode = RandMode();
     if (TECmode > 6 || TECmode < 0)
     {
         Serial.print("TECModeError");
@@ -231,7 +286,8 @@ void SetMode()
     {
         digitalWrite(RELAY[foo], LOW);
         delay(100);
-    }
+    };
+
     if (TECmode != 6)
     {
         digitalWrite(RELAY[TECmode], HIGH);
