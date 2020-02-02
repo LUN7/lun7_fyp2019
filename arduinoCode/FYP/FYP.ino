@@ -4,6 +4,7 @@
 #include <SD.h>
 #include <uptime_formatter.h>
 #define DHTTYPE DHT22
+#include <virtuabotixRTC.h>
 
 int TECmode;
 int mVperAmp = 100;
@@ -11,9 +12,10 @@ int RawValue = 0;
 int ACSoffset = 2500;
 float Voltage = 0;
 float Amps = 0;
+String TECvoltage = "";
+int lastMin = 0;
 
-unsigned long lastMillis;
-unsigned long currentMillis;
+
 
 class SensorsFeedBack
 {
@@ -26,8 +28,10 @@ SensorsFeedBack indoorAirData[4];
 SensorsFeedBack supplyAirData;
 SensorsFeedBack outDoorAirData;
 
+virtuabotixRTC myRTC(6, 7, 8);
+
 const int RELAY[6] = {48, 46, 44, 42, 40, 38}; //2V 4V 6V 8V 10V 12V
-const int DHTPIN[6] = {45, 43, 41, 39, 37, 36};
+const int DHTPIN[6] = {45, 43, 41, 39, 37, 36}; // first pin for supply air , last pin for outdoor air
 
 //const int DHTPIN_0 = 45;
 //const int DHTPIN_1 = 43;
@@ -66,13 +70,12 @@ byte degC[] = {
 
 void setup()
 {
-
     Serial.begin(9600);
     lcd.createChar(0, degC);
     lcd.begin(16, 2);
-    PrintToLCD("Hello World");
-    PrintToLCD("LUN FYP");
-    PrintToLCD("Sys start up");
+    PrintToLCD("LUN FYP 2020");
+    delay(1000);
+    PrintToLCD("Initialing");
 
     PrintToLCD("Init SD card");
     Serial.println("Initialing SD card");
@@ -81,8 +84,7 @@ void setup()
         PrintToLCD("Card failed");
         Serial.println("Card failed, or not present");
         // don't do anything more:
-        while (1)
-            ;
+        while (1);
     }
     PrintToLCD("Card init succ");
     Serial.println("card initialized.");
@@ -102,35 +104,58 @@ void setup()
     digitalWrite(RELAY[4], LOW);
     digitalWrite(RELAY[5], LOW);
 
+
+    do {
+        myRTC.updateTime();
+    } while (myRTC.seconds != 0 );
+    //wait unit 00s
     
     PrintToLCD("sys start up");
     PrintToLCD("successfully");
+
+    lastMin = myRTC.minutes;
 }
 
 void loop()
 {
-    delay(1000);
-    ReadAmp();
-    ReadTempAndHumidity();
     //SerialPrintData();
-    SetMode();
-    lastMillis = millis();
-    currentMillis = millis();
-    do {
-      ReadAmp();
-      ReadTempAndHumidity();  
-      if ( (currentMillis - lastMillis) < 0 ){
-        while (1){
-          PrintToLCD("millis() error");
-        }; 
-      };
-      DisplayData();
-      currentMillis = millis();
-    } while( (currentMillis - lastMillis) <= 53000 );
-    SaveData();
+    myRTC.updateTime();
+    if (myRTC.hours != 1){  //rest one hour for every day
+        TECmode = RandMode();
+        SetMode();
+        do {
+            ReadAmp();
+            ReadTempAndHumidity();  
+            DisplayData();
+        } 
+        while ( checkTime() );
+        SaveData();
+        delay(100);
+    } else {
+        TECmode = 6 ; 
+        SetMode();
+        delay(60000);
+    }
+    
+
+}
+
+boolean checkTime(){
+    myRTC.updateTime();
+    Serial.println(myRTC.minutes);
+    Serial.println(lastMin);
+    if ( (myRTC.minutes - lastMin) == 0 ) {
+        return 1;
+    } 
+    else 
+    { 
+        lastMin = myRTC.minutes;
+        return 0;
+    }
 }
 
 // function to print a device address
+/*
 void SerialPrintData()
 {
 
@@ -166,7 +191,8 @@ void SerialPrintData()
         Serial.println();
     }
     Serial.println("------------------------------------------------------------");
-}
+} 
+*/
 
 void ReadTempAndHumidity()
 {
@@ -190,7 +216,7 @@ void ReadAmp()
     RawValue = analogRead(ampmeter);
     Voltage = (RawValue / 1024.0) * 5000;
     Amps = (((Voltage - ACSoffset) / mVperAmp) + 0.05);
-    Serial.println(Amps);
+    //Serial.println(Amps);
 }
 
 void PrintToLCD(String s)
@@ -200,41 +226,15 @@ void PrintToLCD(String s)
     delay(500);
 }
 
+String getDateTime(){
+    return String(myRTC.dayofmonth) + "/" + String(myRTC.month) + "/" + String(myRTC.year) + " " + String(myRTC.hours) + ":" + String("myRTC.minutes") + ":" + String(myRTC.seconds);
+}
+
 void DisplayData()
 {
     lcd.clear();
     lcd.setCursor(7, 0);
-    switch (TECmode)
-    {
-    case 0:
-        //2V
-        lcd.print("02V ");
-        break;
-    case 1:
-        //4V
-        lcd.print("04V ");
-        break;
-    case 2:
-        //6V
-        lcd.print("06V ");
-        break;
-    case 3:
-        //8V
-        lcd.print("08V ");
-        break;
-    case 4:
-        //10V
-        lcd.print("10V ");
-        break;
-    case 5:
-        //12V
-        lcd.print("12V ");
-        break;
-    case 6:
-        //OFF
-        lcd.print("OFF ");
-        break;
-    }
+    lcd.print(TECvoltage + " ");
     lcd.print(Amps / 1);
     lcd.print("A");
 
@@ -252,10 +252,12 @@ void DisplayData()
         lcd.print(indoorAirData[foo].humidity);
         lcd.print("%");
         delay(1500);
+
         lcd.setCursor(0, 0);
         lcd.print("      ");
         lcd.setCursor(0, 1);
         lcd.print("                ");
+        
     };
     lcd.setCursor(0, 0);
     lcd.print("SAS");
@@ -268,6 +270,12 @@ void DisplayData()
     lcd.print(supplyAirData.humidity);
     lcd.print("%");
 
+    delay(1500);
+    lcd.setCursor(0, 0);
+    lcd.print("      ");
+    lcd.setCursor(0, 1);
+    lcd.print("                ");
+
     lcd.setCursor(0, 0);
     lcd.print("OAS");
     //OAS = Outdoor Air SensorsFeedBack
@@ -278,7 +286,7 @@ void DisplayData()
     lcd.print("C   ");
     lcd.print(outDoorAirData.humidity);
     lcd.print("%");
-
+    
 }
 
 void SaveData()
@@ -289,6 +297,8 @@ void SaveData()
     // if the file is available, write to it:
     if (dataFile)
     {
+        dataFile.print(getDateTime());
+        dataFile.print(", ");
         dataFile.print(supplyAirData.humidity);
         dataFile.print(", ");
         dataFile.print(supplyAirData.tempeature);
@@ -324,18 +334,22 @@ void SaveData()
 
 int RandMode()
 {
-    return random(0, 6);
+    if ( random(0, 9) > 4 ){
+        return random(3, 5);
+    }
+    else {
+        return random(0, 6);
+    }
 }
 
 void SetMode()
 {
-    TECmode = RandMode();
+
     if (TECmode > 6 || TECmode < 0)
     {
         Serial.print("TECModeError");
         PrintToLCD("TEC Mode out of bound");
-        while (1)
-            ;
+        while (1);
     }
     //deactivate all relay
     for (int foo = 0; foo <= 5; foo++)
@@ -347,11 +361,13 @@ void SetMode()
     if (TECmode != 6)
     {
         digitalWrite(RELAY[TECmode], HIGH);
+        TECvoltage = String((TECmode + 1) * 2) + "V"; 
         //add Voltage value;
     }
     else
     {
         // do nothing. i.e. all relay deactivate
         PrintToLCD("TEC OFF");
+        TECvoltage = "0V";
     }
 }
