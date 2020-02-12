@@ -15,8 +15,6 @@ float Amps = 0;
 String TECvoltage = "";
 int lastMin = 0;
 
-
-
 class SensorsFeedBack
 {
 public:
@@ -30,7 +28,7 @@ SensorsFeedBack outDoorAirData;
 
 virtuabotixRTC myRTC(6, 7, 8);
 
-const int RELAY[6] = {48, 46, 44, 42, 40, 38}; //2V 4V 6V 8V 10V 12V
+const int RELAY[6] = {48, 46, 44, 42, 40, 38};  //2V 4V 6V 8V 10V 12V
 const int DHTPIN[6] = {45, 43, 41, 39, 37, 36}; // first pin for supply air , last pin for outdoor air
 
 //const int DHTPIN_0 = 45;
@@ -47,8 +45,7 @@ DHT dht[6] = {
     DHT(DHTPIN[2], DHTTYPE),
     DHT(DHTPIN[3], DHTTYPE),
     DHT(DHTPIN[4], DHTTYPE),
-    DHT(DHTPIN[5], DHTTYPE)
-    };
+    DHT(DHTPIN[5], DHTTYPE)};
 
 //DHT dht0(DHTPIN_0, DHTTYPE)
 
@@ -84,7 +81,8 @@ void setup()
         PrintToLCD("Card failed");
         Serial.println("Card failed, or not present");
         // don't do anything more:
-        while (1);
+        while (1)
+            ;
     }
     PrintToLCD("Card init succ");
     Serial.println("card initialized.");
@@ -104,12 +102,12 @@ void setup()
     digitalWrite(RELAY[4], LOW);
     digitalWrite(RELAY[5], LOW);
 
-
-    do {
+    do
+    {
         myRTC.updateTime();
-    } while (myRTC.seconds != 0 );
+    } while (myRTC.seconds != 0);
     //wait unit 00s
-    
+
     PrintToLCD("sys start up");
     PrintToLCD("successfully");
 
@@ -120,35 +118,38 @@ void loop()
 {
     //SerialPrintData();
     myRTC.updateTime();
-    if (myRTC.hours != 1){  //rest one hour for every day
+    if (myRTC.hours != 1)
+    { //rest one hour for every day
         TECmode = RandMode();
         SetMode();
-        do {
+        do
+        {
             ReadAmp();
-            ReadTempAndHumidity();  
+            ReadTempAndHumidity();
             DisplayData();
-        } 
-        while ( checkTime() );
+        } while (checkTime());
         SaveData();
         delay(100);
-    } else {
-        TECmode = 6 ; 
+    }
+    else
+    {
+        TECmode = 6;
         SetMode();
         delay(60000);
     }
-    
-
 }
 
-boolean checkTime(){
+boolean checkTime()
+{
     myRTC.updateTime();
     Serial.println(myRTC.minutes);
     Serial.println(lastMin);
-    if ( (myRTC.minutes - lastMin) == 0 ) {
+    if ((myRTC.minutes - lastMin) == 0)
+    {
         return 1;
-    } 
-    else 
-    { 
+    }
+    else
+    {
         lastMin = myRTC.minutes;
         return 0;
     }
@@ -226,8 +227,9 @@ void PrintToLCD(String s)
     delay(500);
 }
 
-String getDateTime(){
-    return String(myRTC.dayofmonth) + "/" + String(myRTC.month) + "/" + String(myRTC.year) + " " + String(myRTC.hours) + ":" + String("myRTC.minutes") + ":" + String(myRTC.seconds);
+String getDateTime()
+{
+    return String(myRTC.dayofmonth) + "/" + String(myRTC.month) + "/" + String(myRTC.year) + " " + String(myRTC.hours) + ":" + String(myRTC.minutes) + ":" + String(myRTC.seconds);
 }
 
 void DisplayData()
@@ -257,7 +259,6 @@ void DisplayData()
         lcd.print("      ");
         lcd.setCursor(0, 1);
         lcd.print("                ");
-        
     };
     lcd.setCursor(0, 0);
     lcd.print("SAS");
@@ -286,7 +287,6 @@ void DisplayData()
     lcd.print("C   ");
     lcd.print(outDoorAirData.humidity);
     lcd.print("%");
-    
 }
 
 void SaveData()
@@ -334,10 +334,12 @@ void SaveData()
 
 int RandMode()
 {
-    if ( random(0, 9) > 4 ){
+    if (random(0, 9) > 4)
+    {
         return random(3, 5);
     }
-    else {
+    else
+    {
         return random(0, 6);
     }
 }
@@ -349,7 +351,8 @@ void SetMode()
     {
         Serial.print("TECModeError");
         PrintToLCD("TEC Mode out of bound");
-        while (1);
+        while (1)
+            ;
     }
     //deactivate all relay
     for (int foo = 0; foo <= 5; foo++)
@@ -361,7 +364,7 @@ void SetMode()
     if (TECmode != 6)
     {
         digitalWrite(RELAY[TECmode], HIGH);
-        TECvoltage = String((TECmode + 1) * 2) + "V"; 
+        TECvoltage = String((TECmode + 1) * 2) + "V";
         //add Voltage value;
     }
     else
