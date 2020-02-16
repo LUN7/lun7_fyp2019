@@ -118,25 +118,16 @@ void loop()
 {
     //SerialPrintData();
     myRTC.updateTime();
-    if (myRTC.hours != 1)
-    { //rest one hour for every day
-        TECmode = RandMode();
-        SetMode();
-        do
-        {
-            ReadAmp();
-            ReadTempAndHumidity();
-            DisplayData();
-        } while (checkTime());
-        SaveData();
-        delay(100);
-    }
-    else
+    TECmode = RandMode();
+    SetMode();
+    do
     {
-        TECmode = 6;
-        SetMode();
-        delay(60000);
-    }
+        ReadAmp();
+        ReadTempAndHumidity();
+        DisplayData();
+    } while (checkTime());
+    SaveData();
+    delay(100);
 }
 
 boolean checkTime()
@@ -291,8 +282,8 @@ void DisplayData()
 
 void SaveData()
 {
-
-    File dataFile = SD.open("datalog.csv", FILE_WRITE);
+    logFileName = String(myRTC.dayofmonth) + "/" + String(myRTC.month) + "/" + String(myRTC.year) + "-datalog.csv"
+    File dataFile = SD.open(LogFileName, FILE_WRITE);
     PrintToLCD("Storing data...");
     // if the file is available, write to it:
     if (dataFile)
@@ -315,7 +306,7 @@ void SaveData()
             dataFile.print(indoorAirData[i].tempeature);
             dataFile.print(", ");
         }
-        dataFile.print(TECmode);
+        dataFile.print(TECvoltage);
         dataFile.print(", ");
         dataFile.print(Amps);
         dataFile.println("");
