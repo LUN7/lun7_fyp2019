@@ -114,11 +114,11 @@ void setup()
     PrintToLCD(getDateTime());
     delay(1000);
     
-    do
-    {
-        myRTC.updateTime();
-    } 
-    while(myRTC.seconds != 0);
+    //do
+    //{
+    //    myRTC.updateTime();
+    //} 
+    //while(myRTC.seconds != 0);
     
     //wait unit 00s
 
@@ -130,19 +130,19 @@ void setup()
 void loop()
 {
     //SerialPrintData();
-    TECmode = RandMode();
-    SetMode();
+    //TECmode = RandMode();
+    //SetMode();
     myRTC.updateTime();
-    lastMin = myRTC.minutes;
-    do
-    {
-        ReadAmp();
-        ReadTempAndHumidity();
-        DisplayData();
-        //SerialPrintData();
-        PrintToLCD(getDateTime());
-    } while (checkTime());
-    SaveData();
+    //lastMin = myRTC.minutes;
+    //do
+    //{
+    ReadAmp();
+    ReadTempAndHumidity();
+    DisplayData();
+    SerialPrintData();
+    //PrintToLCD(getDateTime());
+    //} while (checkTime());
+    //SaveData();
     delay(100);
 }
 

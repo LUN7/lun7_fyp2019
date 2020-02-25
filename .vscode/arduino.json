@@ -1,4 +1,5 @@
 {
     "board": "arduino:avr:megaADK",
-    "sketch": "Latest\\arduinoCode\\FYP\\FYP.ino"
+    "sketch": "Latest/arduinoCode/FYP/FYP.ino",
+    "port": "/dev/ttyACM0"
 }
