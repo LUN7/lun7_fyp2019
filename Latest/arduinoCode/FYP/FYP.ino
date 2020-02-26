@@ -3,8 +3,9 @@
 #include <SPI.h>
 #include <SD.h>
 #include <uptime_formatter.h>
-#define DHTTYPE DHT22
 #include <virtuabotixRTC.h>
+
+#define DHTTYPE DHT22
 
 int TECmode;
 int mVperAmp = 100;
