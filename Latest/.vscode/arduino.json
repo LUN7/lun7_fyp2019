@@ -1,7 +1,0 @@
-{
-    "board": "arduino:avr:mega",
-    "configuration": "cpu=atmega2560",
-    "sketch": "arduinoCode/FYP/FYP.ino",
-    "output": "../build",
-    "port": "/dev/ttyACM0"
-}

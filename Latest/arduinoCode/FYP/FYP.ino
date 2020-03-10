@@ -17,7 +17,7 @@ String TECvoltage = "";
 int lastMin = 0;
 int lastSec = 0;
 
-class SensorsFeedBack
+class SensorsFeedBack 
 {
 public:
     float humidity;
@@ -47,7 +47,8 @@ DHT dht[6] = {
     DHT(DHTPIN[2], DHTTYPE),
     DHT(DHTPIN[3], DHTTYPE),
     DHT(DHTPIN[4], DHTTYPE),
-    DHT(DHTPIN[5], DHTTYPE)};
+    DHT(DHTPIN[5], DHTTYPE)
+}
 
 //DHT dht0(DHTPIN_0, DHTTYPE)
 
@@ -64,7 +65,8 @@ byte degC[] = {
     B00000,
     B00000,
     B00000,
-    B00000};
+    B00000
+}
 //degree C symbol
 
 void setup()
@@ -91,18 +93,10 @@ void setup()
     delay(1000);
     PrintToLCD("Init sensors");
 
-    pinMode(RELAY[0], OUTPUT);
-    pinMode(RELAY[1], OUTPUT);
-    pinMode(RELAY[2], OUTPUT);
-    pinMode(RELAY[3], OUTPUT);
-    pinMode(RELAY[4], OUTPUT);
-    pinMode(RELAY[5], OUTPUT);
-    digitalWrite(RELAY[0], LOW);
-    digitalWrite(RELAY[1], LOW);
-    digitalWrite(RELAY[2], LOW);
-    digitalWrite(RELAY[3], LOW);
-    digitalWrite(RELAY[4], LOW);
-    digitalWrite(RELAY[5], LOW);
+    for (int i = 0 ; i <= 5 ; i++ ){
+        pinMode(RELAY[i], OUTPUT);
+        digitalWrite(RELAY[i], LOW);
+    }
 
     // Set the current date, and time in the following format:
     // seconds, minutes, hours, day of the week, day of the month, month, year
@@ -115,12 +109,9 @@ void setup()
     PrintToLCD(getDateTime());
     delay(1000);
     
-    do
-    {
-        myRTC.updateTime();
-    } 
-    while(myRTC.seconds != 0);
-    
+    do {
+        myRTC.updateTime(); 
+    } while(myRTC.seconds != 0);
     //wait unit 00s
 
     PrintToLCD("sys start up");
@@ -128,103 +119,53 @@ void setup()
 
 }
 
-void loop()
-{
+void loop() {
     //SerialPrintData();
     TECmode = RandMode();
     SetMode();
     myRTC.updateTime();
-    lastMin = myRTC.minutes;
+    delay(4000)
+    ReadAmp();
+    ReadTempAndHumidity();
+    DisplayData();
+    //SerialPrintData();
+    PrintToLCD(getDateTime());
     do
     {
-        ReadAmp();
-        ReadTempAndHumidity();
-        DisplayData();
-        //SerialPrintData();
-        PrintToLCD(getDateTime());
+        delay(500);
     } while (checkTime());
     SaveData();
     delay(100);
-}
 
-boolean checkTime()
-{
+}
+boolean checkTime() {
     myRTC.updateTime();
-    Serial.println(myRTC.minutes);
-    Serial.println(lastMin);
-    if (((myRTC.seconds - lastSec) >= 30) || ((myRTC.seconds - lastSec) < 0)){
-        SaveData();
-        lastSec = myRTC.seconds;
-    }
-    if ((myRTC.minutes - lastMin) == 0)
-    {
+    if( myRTC.seconds >= 0 && myRTC.seconds <= 3){ 
+        return 0;
+    } else if ( myRTC.seconds >= 20 || myRTC.seconds <= 23 ){
+        return 0;
+    } else if ( myRTC.seconds >= 40 || myRTC.seconds <= 43 ){
+        return 0;
+    } else {
         return 1;
     }
-    else
-    {
-        lastMin = myRTC.minutes;
-        return 0;
-    }
 }
 
-// function to print a device address
-
-void SerialPrintData()
-{ 
-
-    Serial.print("OutDoor air");
-    Serial.print("\t | Humidity: ");
-    Serial.print(outDoorAirData.humidity);
-    Serial.print("%");
-    Serial.print(" | Tempeature: ");
-    Serial.print(outDoorAirData.tempeature);
-    Serial.print(" Degree C");
-    Serial.print(" |");
-    Serial.println();    
-    Serial.print("Supply air");
-    Serial.print("\t | Humidity: ");
-    Serial.print(supplyAirData.humidity);
-    Serial.print("%");
-    Serial.print(" | Tempeature: ");
-    Serial.print(supplyAirData.tempeature);
-    Serial.print(" Degree C");
-    Serial.print(" |");
-    Serial.println();    
-
-    for (int i = 0; i < 4; i++)
-    {
-        Serial.print(i);
-        Serial.print("\t | Humidity: ");
-        Serial.print(indoorAirData[i].humidity);
-        Serial.print("%");
-        Serial.print(" | Tempeature: ");
-        Serial.print(indoorAirData[i].tempeature);
-        Serial.print(" Degree C");
-        Serial.print(" |");
-        Serial.println();
-    }
-    Serial.println("------------------------------------------------------------");
-} 
-
-
-void ReadTempAndHumidity()
-{
+void ReadTempAndHumidity() {
     outDoorAirData.humidity = dht[5].readHumidity();
     outDoorAirData.tempeature = dht[5].readTemperature();
 
     supplyAirData.humidity = dht[4].readHumidity();
     supplyAirData.tempeature = dht[4].readTemperature();
 
-    for (int i = 0; i < 4; i++)
-    {
+    for (int i = 0; i < 4; i++) {
         indoorAirData[i].humidity = dht[i].readHumidity();
         indoorAirData[i].tempeature = dht[i].readTemperature();
     }
     // Read temperature as Celsius
 }
 
-void ReadAmp()
-{
+void ReadAmp() {
     //get amp value
     RawValue = analogRead(ampmeter);
     Voltage = (RawValue / 1024.0) * 5000;
@@ -232,16 +173,34 @@ void ReadAmp()
     //Serial.println(Amps);
 }
 
-void PrintToLCD(String s)
-{
+void PrintToLCD(String s) {
+    //clear the monitor and print string s
     lcd.clear();
     lcd.print(s);
     delay(500);
 }
 
-String getDateTime()
-{
+String getDateTime() {
+    //return a datetime string
     return String(myRTC.dayofmonth) + "/" + String(myRTC.month) + "/" + String(myRTC.year) + " " + String(myRTC.hours) + ":" + String(myRTC.minutes) + ":" + String(myRTC.seconds);
+}
+
+void LCDisplatPatter(String sensorName, tempeature, humidity ){
+
+        lcd.setCursor(0, 0);
+        lcd.print(sensorName);
+        lcd.setCursor(0, 1);
+        lcd.print(tempeature);
+        lcd.write((byte)0);
+        lcd.print("C   ");
+        lcd.print(humidity);
+        lcd.print("%");
+        delay(1500);
+        lcd.setCursor(0, 0);
+        lcd.print("      ");
+        lcd.setCursor(0, 1);
+        lcd.print("                ");
+
 }
 
 void DisplayData()
@@ -252,53 +211,13 @@ void DisplayData()
     lcd.print(Amps / 1);
     lcd.print("A");
 
-    for (int foo = 0; foo < 4; foo++)
-    {
-        lcd.setCursor(0, 0);
-        lcd.print("IAS");
-        //IAS = Indoor Air Sensor
-        lcd.print(foo);
-        lcd.print(" ");
-        lcd.setCursor(0, 1);
-        lcd.print(indoorAirData[foo].tempeature);
-        lcd.write((byte)0);
-        lcd.print("C   ");
-        lcd.print(indoorAirData[foo].humidity);
-        lcd.print("%");
-        delay(1500);
-
-        lcd.setCursor(0, 0);
-        lcd.print("      ");
-        lcd.setCursor(0, 1);
-        lcd.print("                ");
+    for (int foo = 0; foo < 4; foo++) {
+        LCDisplatPatter(("IAS" + String(foo)+ " ") ,indoorAirData[foo].tempeature, indoorAirData[foo].humidity)
     };
-    lcd.setCursor(0, 0);
-    lcd.print("SAS");
-    //SAS = Supply Air SensorsFeedBack
-    lcd.print("   ");
-    lcd.setCursor(0, 1);
-    lcd.print(supplyAirData.tempeature);
-    lcd.write((byte)0);
-    lcd.print("C   ");
-    lcd.print(supplyAirData.humidity);
-    lcd.print("%");
 
-    delay(1500);
-    lcd.setCursor(0, 0);
-    lcd.print("      ");
-    lcd.setCursor(0, 1);
-    lcd.print("                ");
+    LCDisplatPatter("SAS   " , supplyAirData.tempeature , supplyAirData.humidity );
+    LCDisplatPatter("SAS   " , supplyAirData.tempeature , supplyAirData.humidity );
 
-    lcd.setCursor(0, 0);
-    lcd.print("OAS");
-    //OAS = Outdoor Air SensorsFeedBack
-    lcd.print("   ");
-    lcd.setCursor(0, 1);
-    lcd.print(outDoorAirData.tempeature);
-    lcd.write((byte)0);
-    lcd.print("C   ");
-    lcd.print(outDoorAirData.humidity);
-    lcd.print("%");
 }
 
 void SaveData()
@@ -307,8 +226,7 @@ void SaveData()
     File dataFile = SD.open("DATALOG.csv", FILE_WRITE);
     PrintToLCD("Storing data...");
     // if the file is available, write to it:
-    if (dataFile)
-    {
+    if (dataFile) {
         dataFile.print(getDateTime());
         dataFile.print(", ");
         dataFile.print(supplyAirData.humidity);
@@ -320,8 +238,7 @@ void SaveData()
         dataFile.print(outDoorAirData.tempeature);
         dataFile.print(", ");
 
-        for (int i = 0; i < 4; i++)
-        {
+        for (int i = 0; i < 4; i++) {
             dataFile.print(indoorAirData[i].humidity);
             dataFile.print(", ");
             dataFile.print(indoorAirData[i].tempeature);
@@ -334,12 +251,10 @@ void SaveData()
         dataFile.close();
     }
     // if the file isn't open, pop up an error:
-    else
-    {
+    else{
         Serial.println("error opening datalog.csv");
         PrintToLCD("Error opening datalog.csv");
-        while (1)
-            ;
+        while (1);
     }
     PrintToLCD("Data Stored successfully");
 }
@@ -347,50 +262,68 @@ void SaveData()
 int RandMode()
 {
     if (((myRTC.hours * myRTC.dayofmonth) % 3) == 0 ){
-        if (random(0, 9) > 4)
-        {
+        if (random(0, 9) > 4){
             return random(3, 5);
-        }
-        else
-        {
+        } else   {
             return random(0, 6);      
-        } 
-    }
-    else
-    {
+        }
+    } else  {
         return random(0,6);  
     }
-
-
 }
 
 void SetMode()
 {
-
-    if (TECmode > 6 || TECmode < 0)
-    {
+    if (TECmode > 6 || TECmode < 0){
         Serial.print("TECModeError");
         PrintToLCD("TEC Mode out of bound");
-        while (1)
-            ;
+        while (1);
     }
     //deactivate all relay
-    for (int foo = 0; foo <= 5; foo++)
-    {
+    for (int foo = 0; foo <= 5; foo++){
         digitalWrite(RELAY[foo], LOW);
         delay(100);
     };
 
-    if (TECmode != 6)
-    {
+    if (TECmode != 6){
         digitalWrite(RELAY[TECmode], HIGH);
         TECvoltage = String((TECmode + 1) * 2) + "V";
         //add Voltage value;
     }
-    else
-    {
+    else {
         // do nothing. i.e. all relay deactivate
         PrintToLCD("TEC OFF");
         TECvoltage = "0V";
     }
 }
+
+/* 
+void SerialPrintPattern(String sensorName ,double humidity ,double tempeature){
+
+    //printing pattern of serial 
+    Serial.print(sensorName);
+    Serial.print("\t | Humidity: ");
+    Serial.print(humidity);
+    Serial.print("%");
+    Serial.print(" | Tempeature: ");
+    Serial.print(tempeature);
+    Serial.print(" Degree C");
+    Serial.print(" |");
+    Serial.println();
+    
+}
+*/
+/* 
+void SerialPrintData()
+{ 
+    //print data to serial monitor
+    SeriaPrintPattern("Outdoor air" ,outDoorAirData.humidity, outDoorAirData.tempeature);
+    SeriaPrintPattern("supply air" ,supplyAirData.humidity, supplyAirData.tempeature);
+
+    for (int i = 0; i < 4; i++)
+    {
+        SeriaPrintPattern(String(i) ,indoorAirData[i].humidity, indoorAirData[i].tempeature)
+    }
+    Serial.println("------------------------------------------------------------");
+} 
+ */
