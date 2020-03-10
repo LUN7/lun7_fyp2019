@@ -7,15 +7,16 @@
 
 #define DHTTYPE DHT22
 
-int TECmode;
+int sequence = 0;
+int TECmode = 0;
 int mVperAmp = 100;
 int RawValue = 0;
 int ACSoffset = 2500;
 float Voltage = 0;
 float Amps = 0;
 String TECvoltage = "";
+String saveVoltage = "";
 int lastMin = 0;
-int lastSec = 0;
 
 class SensorsFeedBack 
 {
@@ -33,14 +34,6 @@ virtuabotixRTC myRTC(6, 7, 8);
 const int RELAY[6] = {48, 46, 44, 42, 40, 38};  //2V 4V 6V 8V 10V 12V
 const int DHTPIN[6] = {45, 43, 41, 39, 37, 36}; // first pin for supply air , last pin for outdoor air
 
-//const int DHTPIN_0 = 45;
-//const int DHTPIN_1 = 43;
-//const int DHTPIN_2 = 41;
-//const int DHTPIN_3 = 39;
-//const int DHTPIN_4 = 37;
-
-//fragiled sensor
-
 DHT dht[6] = {
     DHT(DHTPIN[0], DHTTYPE),
     DHT(DHTPIN[1], DHTTYPE),
@@ -48,9 +41,7 @@ DHT dht[6] = {
     DHT(DHTPIN[3], DHTTYPE),
     DHT(DHTPIN[4], DHTTYPE),
     DHT(DHTPIN[5], DHTTYPE)
-}
-
-//DHT dht0(DHTPIN_0, DHTTYPE)
+};
 
 const int ampmeter = A0;
 const int chipSelect = 4;
@@ -66,7 +57,7 @@ byte degC[] = {
     B00000,
     B00000,
     B00000
-}
+};
 //degree C symbol
 
 void setup()
@@ -100,11 +91,11 @@ void setup()
 
     // Set the current date, and time in the following format:
     // seconds, minutes, hours, day of the week, day of the month, month, year
-    //myRTC.setDS1302Time(45, 41, 13, 2, 18, 2, 2020); //Here you write your actual time/date as shown above 
+    //myRTC.setDS1302Time(30, 30, 15, 2, 10, 3, 2020); //Here you write your actual time/date as shown above 
     //but remember to "comment/remove" this function once you're done
     //The setup is done only one time and the module will continue counting it automatically
     
-    myRTC.updateTime();
+    myRTC.updateTime(); 
     //Serial.println(getDateTime());
     PrintToLCD(getDateTime());
     delay(1000);
@@ -113,38 +104,39 @@ void setup()
         myRTC.updateTime(); 
     } while(myRTC.seconds != 0);
     //wait unit 00s
-
-    PrintToLCD("sys start up");
-    PrintToLCD("successfully");
-
+    lastMin = myRTC.minutes;
+    RandMode();
+    SetMode();
 }
 
 void loop() {
     //SerialPrintData();
-    TECmode = RandMode();
-    SetMode();
+    delay(4000);
     myRTC.updateTime();
-    delay(4000)
-    ReadAmp();
     ReadTempAndHumidity();
+    ReadAmp();
     DisplayData();
     //SerialPrintData();
-    PrintToLCD(getDateTime());
+    myRTC.updateTime();
     do
     {
-        delay(500);
+        PrintToLCD(String(myRTC.seconds) + 's');
+        delay(100);
     } while (checkTime());
+    myRTC.updateTime();
+    ReadAmp();
+    ReadTempAndHumidity();
+    
+    RandMode();
+    saveVoltage = TECvoltage;
+    SetMode();
     SaveData();
-    delay(100);
-
+    saveVoltage = TECvoltage;
 }
+
 boolean checkTime() {
     myRTC.updateTime();
-    if( myRTC.seconds >= 0 && myRTC.seconds <= 3){ 
-        return 0;
-    } else if ( myRTC.seconds >= 20 || myRTC.seconds <= 23 ){
-        return 0;
-    } else if ( myRTC.seconds >= 40 || myRTC.seconds <= 43 ){
+    if( myRTC.minutes != lastMin ){ 
         return 0;
     } else {
         return 1;
@@ -185,7 +177,7 @@ String getDateTime() {
     return String(myRTC.dayofmonth) + "/" + String(myRTC.month) + "/" + String(myRTC.year) + " " + String(myRTC.hours) + ":" + String(myRTC.minutes) + ":" + String(myRTC.seconds);
 }
 
-void LCDisplatPatter(String sensorName, tempeature, humidity ){
+void LCDisplatPatten(String sensorName, float tempeature, float humidity ){
 
         lcd.setCursor(0, 0);
         lcd.print(sensorName);
@@ -195,16 +187,16 @@ void LCDisplatPatter(String sensorName, tempeature, humidity ){
         lcd.print("C   ");
         lcd.print(humidity);
         lcd.print("%");
-        delay(1500);
+        delay(800);
         lcd.setCursor(0, 0);
         lcd.print("      ");
         lcd.setCursor(0, 1);
         lcd.print("                ");
-
 }
 
 void DisplayData()
 {
+
     lcd.clear();
     lcd.setCursor(7, 0);
     lcd.print(TECvoltage + " ");
@@ -212,11 +204,11 @@ void DisplayData()
     lcd.print("A");
 
     for (int foo = 0; foo < 4; foo++) {
-        LCDisplatPatter(("IAS" + String(foo)+ " ") ,indoorAirData[foo].tempeature, indoorAirData[foo].humidity)
+        LCDisplatPatten(("IAS" + String(foo)+ " ") ,indoorAirData[foo].tempeature, indoorAirData[foo].humidity);
     };
 
-    LCDisplatPatter("SAS   " , supplyAirData.tempeature , supplyAirData.humidity );
-    LCDisplatPatter("SAS   " , supplyAirData.tempeature , supplyAirData.humidity );
+    LCDisplatPatten("SAS   " , supplyAirData.tempeature , supplyAirData.humidity );
+    LCDisplatPatten("SAS   " , supplyAirData.tempeature , supplyAirData.humidity );
 
 }
 
@@ -244,7 +236,7 @@ void SaveData()
             dataFile.print(indoorAirData[i].tempeature);
             dataFile.print(", ");
         }
-        dataFile.print(TECvoltage);
+        dataFile.print(saveVoltage);
         dataFile.print(", ");
         dataFile.print(Amps);
         dataFile.println("");
@@ -259,17 +251,24 @@ void SaveData()
     PrintToLCD("Data Stored successfully");
 }
 
-int RandMode()
+void RandMode()
 {
-    if (((myRTC.hours * myRTC.dayofmonth) % 3) == 0 ){
-        if (random(0, 9) > 4){
-            return random(3, 5);
+    if ( sequence !=0){
+        sequence --;
+        return;
+    } else {
+
+        sequence = random(1,3);
+
+        if (random(0, 10) > 3){
+            TECmode = random(3, 6);
+            return;
         } else   {
-            return random(0, 6);      
+            TECmode = random(0, 7);   
+            return;
         }
-    } else  {
-        return random(0,6);  
     }
+
 }
 
 void SetMode()
@@ -298,9 +297,9 @@ void SetMode()
 }
 
 /* 
-void SerialPrintPattern(String sensorName ,double humidity ,double tempeature){
+void SerialPrintPatten(String sensorName ,double humidity ,double tempeature){
 
-    //printing pattern of serial 
+    //printing Patten of serial 
     Serial.print(sensorName);
     Serial.print("\t | Humidity: ");
     Serial.print(humidity);
@@ -317,12 +316,12 @@ void SerialPrintPattern(String sensorName ,double humidity ,double tempeature){
 void SerialPrintData()
 { 
     //print data to serial monitor
-    SeriaPrintPattern("Outdoor air" ,outDoorAirData.humidity, outDoorAirData.tempeature);
-    SeriaPrintPattern("supply air" ,supplyAirData.humidity, supplyAirData.tempeature);
+    SeriaPrintPatten("Outdoor air" ,outDoorAirData.humidity, outDoorAirData.tempeature);
+    SeriaPrintPatten("supply air" ,supplyAirData.humidity, supplyAirData.tempeature);
 
     for (int i = 0; i < 4; i++)
     {
-        SeriaPrintPattern(String(i) ,indoorAirData[i].humidity, indoorAirData[i].tempeature)
+        SeriaPrintPatten(String(i) ,indoorAirData[i].humidity, indoorAirData[i].tempeature)
     }
     Serial.println("------------------------------------------------------------");
 } 
