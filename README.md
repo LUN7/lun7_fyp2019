@@ -10,7 +10,7 @@
 ![d](https://github.com/LUN7/fyp2019/blob/master/OUTDATED/cool_predor_dia.png)
 
 `Problem`
-- model can only be examinated by exiting data
+- model can only be examinated by existing data
 
 'Solution'
 - see updated_plan.docs
